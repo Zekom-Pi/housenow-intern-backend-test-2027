@@ -13,7 +13,7 @@ interface CreateBookingRequest {
 
 type Booking = Selectable<BookingTable>;
 
-// Kết quả trả về.
+// Kết quả trả về
 // Nếu thành công sẽ có booking.
 // Nếu thất bại sẽ trả về status, mã lỗi và thông báo lỗi.
 type BookingResult =
