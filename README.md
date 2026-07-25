@@ -1,3 +1,140 @@
+Đã kiểm thử endpoint `POST /api/bookings` với các trường hợp sau:
+
+- **201 Created** – Tạo booking thành công.
+  - Request:
+    ```json
+    {
+      "userId": 1,
+      "slotId": 10,
+      "idempotencyKey": "booking-user1-slot10"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "id": 1,
+      "userId": 1,
+      "slotId": 10,
+      "status": "CONFIRMED"
+    }
+    ```
+
+- **200 OK** – Retry cùng `idempotencyKey`, không tạo booking mới.
+  - Request:
+    ```json
+    {
+      "userId": 2,
+      "slotId": 12,
+      "idempotencyKey": "retry-test"
+    }
+    ```
+  - Kết quả:
+    - Lần 1: `201 Created`
+    - Lần 2: `200 OK`, trả về booking đã tạo ở lần đầu.
+
+- **400 Bad Request** – Dữ liệu đầu vào không hợp lệ.
+  - Ví dụ:
+    ```json
+    {
+      "userId": "1",
+      "slotId": 10,
+      "idempotencyKey": "k1"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "code": "VALIDATION_ERROR",
+      "message": "userId, slotId and idempotencyKey are required"
+    }
+    ```
+
+- **404 Not Found** – Người dùng không tồn tại.
+  - Request:
+    ```json
+    {
+      "userId": 999,
+      "slotId": 10,
+      "idempotencyKey": "k2"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "code": "USER_NOT_FOUND",
+      "message": "User was not found"
+    }
+    ```
+
+- **404 Not Found** – Slot không tồn tại.
+  - Request:
+    ```json
+    {
+      "userId": 1,
+      "slotId": 999,
+      "idempotencyKey": "k3"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "code": "SLOT_NOT_FOUND",
+      "message": "Slot was not found"
+    }
+    ```
+
+- **409 Conflict** – Slot đã hết chỗ.
+  - Request:
+    ```json
+    {
+      "userId": 1,
+      "slotId": 11,
+      "idempotencyKey": "k4"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "code": "SLOT_FULL",
+      "message": "Slot is fully booked"
+    }
+    ```
+
+- **409 Conflict** – Người dùng đã đặt slot này trước đó.
+  - Lần 1:
+    ```json
+    {
+      "userId": 1,
+      "slotId": 12,
+      "idempotencyKey": "booking-1"
+    }
+    ```
+    → `201 Created`
+
+  - Lần 2:
+    ```json
+    {
+      "userId": 1,
+      "slotId": 12,
+      "idempotencyKey": "booking-2"
+    }
+    ```
+    → Response:
+    ```json
+    {
+      "code": "ALREADY_BOOKED",
+      "message": "User already booked this slot"
+    }
+    ```
+
+- **500 Internal Server Error** – Các lỗi ngoài dự kiến trong transaction hoặc cơ sở dữ liệu.
+  - Response:
+    ```json
+    {
+      "code": "INTERNAL_ERROR",
+      "message": "Unexpected booking error"
+    }
+
 # HouseNow Backend Intern Mini Test 2027
 
 Hoàn thiện endpoint đặt chỗ trong starter project này.
